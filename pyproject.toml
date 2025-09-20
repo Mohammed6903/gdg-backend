@@ -1,0 +1,21 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiortc>=1.13.0",
+    "bcrypt>=4.3.0",
+    "fastapi[standard]>=0.116.2",
+    "geopy>=2.4.1",
+    "google-adk>=1.14.1",
+    "google-cloud-speech>=2.33.0",
+    "google-cloud-texttospeech>=2.29.0",
+    "google-genai>=1.38.0",
+    "motor>=3.7.1",
+    "opencv-python>=4.12.0.88",
+    "pipecat-ai-small-webrtc-prebuilt>=1.0.0",
+    "pipecat-ai[daily,silero]>=0.0.85",
+    "twilio>=9.8.1",
+]

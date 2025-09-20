@@ -1,0 +1,10 @@
+fastapi[standard]
+uvicorn
+pydantic
+dotenv
+prisma
+google-adk
+bcrypt
+jwt
+gunicorn
+geopy
