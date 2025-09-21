@@ -1,6 +1,21 @@
 from google.adk.agents import LlmAgent
 from .tools.fetch_nearby import fetch_location_info
 from .tools.incident import CreateIncidentTool, UpdateIncidentTool
+from .tools.hospital import (
+    get_hospital_tool,
+    get_all_hospitals_tool,
+    get_nearby_hospitals_tool,
+)
+from .tools.ambulance import (
+    get_ambulance_tool,
+    create_ambulance_tool,
+    get_ambulance_assignment_tool,
+    get_ambulance_assignments_by_ambulance_tool,
+    get_ambulances_by_hospital_tool,
+    update_ambulance_location_tool,
+    update_ambulance_status_tool,
+    assign_ambulance_to_incident_tool,
+)
 from google.adk.tools import google_search
 
 root_agent = LlmAgent(
@@ -34,5 +49,21 @@ root_agent = LlmAgent(
         "- **Fallback**: If a phase fails, retry once then escalate.\n"
         "Handle stressed callers calmly. Base decisions on standard emergency protocols. Your goal: Save lives efficiently."
     ),
-    tools=[fetch_location_info, google_search, CreateIncidentTool, UpdateIncidentTool],
-)
+    tools=[
+        fetch_location_info, 
+        google_search, 
+        CreateIncidentTool, 
+        UpdateIncidentTool,
+        get_hospital_tool,
+        get_all_hospitals_tool,
+        get_nearby_hospitals_tool,
+        get_ambulance_tool,
+        create_ambulance_tool,
+        get_ambulance_assignment_tool,
+        get_ambulance_assignments_by_ambulance_tool,
+        get_ambulances_by_hospital_tool,
+        update_ambulance_location_tool,
+        update_ambulance_status_tool,
+        assign_ambulance_to_incident_tool,
+    ],
+) 

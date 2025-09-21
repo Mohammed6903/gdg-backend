@@ -108,6 +108,155 @@ async def get_active_incidents(limit: int = 50):
     db = await get_db()
     return await db.incidents.find({"status": "active"}).limit(limit).to_list(length=limit)
 
+# Ambulance CRUD operations
+
+async def create_ambulance(data: dict) -> dict:
+    """
+    Create a new ambulance record in the database.
+
+    Args:
+        data (dict): Ambulance data matching the AmbulanceBase model.
+            - hospital_id (str): Associated hospital ID.
+            - address (str): Ambulance base address.
+            - contact_phone (str): Contact phone number.
+            - status (str): Operational status ("operational", "overloaded", "closed").
+            - vehicle_number (str): Unique vehicle number.
+            - driver_name (Optional[str]): Driver's name.
+            - driver_phone (Optional[str]): Driver's phone.
+            - equipment (Optional[List[str]]): List of equipment.
+            - capacity (int): Patient capacity.
+            - current_location (Optional[Dict[str, float]]): Current location {"lat": float, "lng": float}.
+
+    Returns:
+        dict: The created ambulance document.
+    """
+    db = await get_db()
+    data["created_at"] = datetime.now(timezone.utc)
+    data["updated_at"] = datetime.now(timezone.utc)
+    result = await db.ambulances.insert_one(data)
+    return await db.ambulances.find_one({"_id": result.inserted_id})
+
+async def get_ambulance(ambulance_id: str) -> Optional[dict]:
+    """
+    Retrieve an ambulance by its unique ID.
+
+    Args:
+        ambulance_id (str): The ambulance's unique identifier.
+
+    Returns:
+        dict or None: The ambulance document if found, else None.
+    """
+    db = await get_db()
+    return await db.ambulances.find_one({"_id": ObjectId(ambulance_id)})
+
+async def update_ambulance_status(ambulance_id: str, status: str, current_location: Optional[Dict[str, float]] = None) -> Optional[dict]:
+    """
+    Update the status and optionally the current location of an ambulance.
+
+    Args:
+        ambulance_id (str): The ambulance's unique identifier.
+        status (str): New status ("operational", "overloaded", "closed").
+        current_location (Optional[Dict[str, float]]): New location {"lat": float, "lng": float}.
+
+    Returns:
+        dict or None: The updated ambulance document.
+    """
+    db = await get_db()
+    update_fields = {"status": status, "updated_at": datetime.now(timezone.utc)}
+    if current_location:
+        update_fields["current_location"] = current_location
+    await db.ambulances.update_one(
+        {"_id": ObjectId(ambulance_id)},
+        {"$set": update_fields}
+    )
+    return await db.ambulances.find_one({"_id": ObjectId(ambulance_id)})
+
+async def update_ambulance_location(ambulance_id: str, current_location: Dict[str, float]) -> Optional[dict]:
+    """
+    Update only the current location of an ambulance.
+
+    Args:
+        ambulance_id (str): The ambulance's unique identifier.
+        current_location (Dict[str, float]): New location {"lat": float, "lng": float}.
+
+    Returns:
+        dict or None: The updated ambulance document.
+    """
+    db = await get_db()
+    await db.ambulances.update_one(
+        {"_id": ObjectId(ambulance_id)},
+        {"$set": {"current_location": current_location, "updated_at": datetime.now(timezone.utc)}}
+    )
+    return await db.ambulances.find_one({"_id": ObjectId(ambulance_id)})
+
+async def get_ambulances_by_hospital(hospital_id: str, status: Optional[str] = None) -> List[dict]:
+    """
+    Retrieve ambulances for a specific hospital, optionally filtered by status.
+
+    Args:
+        hospital_id (str): Hospital ID to filter ambulances.
+        status (Optional[str]): Filter by status ("operational", "overloaded", "closed").
+
+    Returns:
+        List[dict]: List of matching ambulance documents.
+    """
+    db = await get_db()
+    query = {"hospital_id": hospital_id}
+    if status:
+        query["status"] = status
+    return await db.ambulances.find(query).to_list(length=None)
+
+async def assign_ambulance_to_incident(assignment_data: dict) -> dict:
+    """
+    Assign an ambulance to an incident and create an assignment record.
+
+    Args:
+        assignment_data (dict): Assignment details matching AmbulanceAssignment model.
+            - ambulance_id (str): Ambulance ID.
+            - incident_id (str): Incident ID.
+            - hospital_id (str): Hospital ID.
+            - estimated_arrival (Optional[datetime]): ETA.
+            - status (str): Assignment status ("assigned", "en_route", "arrived", "completed").
+
+    Returns:
+        dict: The created assignment document.
+    """
+    db = await get_db()
+    assignment_data["created_at"] = datetime.now(timezone.utc)
+    result = await db.ambulance_assignments.insert_one(assignment_data)
+    # Optionally update ambulance status to "en_route"
+    await db.ambulances.update_one(
+        {"_id": ObjectId(assignment_data["ambulance_id"])},
+        {"$set": {"status": "en_route", "updated_at": datetime.now(timezone.utc)}}
+    )
+    return await db.ambulance_assignments.find_one({"_id": result.inserted_id})
+
+async def get_ambulance_assignment(assignment_id: str) -> Optional[dict]:
+    """
+    Retrieve an ambulance assignment by its unique ID.
+
+    Args:
+        assignment_id (str): Assignment document ID.
+
+    Returns:
+        dict or None: The assignment document if found, else None.
+    """
+    db = await get_db()
+    return await db.ambulance_assignments.find_one({"_id": ObjectId(assignment_id)})
+
+async def get_ambulance_assignments_by_ambulance(ambulance_id: str) -> List[dict]:
+    """
+    Retrieve all assignments for a specific ambulance.
+
+    Args:
+        ambulance_id (str): Ambulance ID.
+
+    Returns:
+        List[dict]: List of assignment documents.
+    """
+    db = await get_db()
+    return await db.ambulance_assignments.find({"ambulance_id": ambulance_id}).to_list(length=None)
+
 # Responder operations
 async def get_nearby_responders(
     lat: float, lng: float, 
@@ -218,6 +367,12 @@ async def update_hospital_beds(hospital_id: str, beds_available: int):
 async def get_hospital(hospital_id: str):
     db = await get_db()
     return await db.hospitals.find_one({"_id": ObjectId(hospital_id)})
+
+
+async def get_all_hospitals() -> List[dict]:
+    db = await get_db()
+    return await db.hospitals.find().to_list(length=None)
+
 
 # Response operations
 async def create_response(data: dict):
