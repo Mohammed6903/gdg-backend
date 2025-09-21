@@ -1,9 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional, Dict
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from bson import ObjectId
 from app.db.session import get_db
-from time import timezone
 
 # User operations (kept from original)
 async def get_user(user_id: str):
@@ -30,6 +29,15 @@ async def create_incident(data: dict):
 async def get_incident(incident_id: str):
     db = await get_db()
     return await db.incidents.find_one({"_id": ObjectId(incident_id)})
+
+async def get_latest_incident():
+    db = await get_db()
+    five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
+    incident = await db.incidents.find_one(
+        {"created_at": {"$gte": five_minutes_ago}},
+        sort=[("created_at", -1)]
+    )
+    return incident
 
 async def update_incident(incident_id: str, update_data: dict):
     db = await get_db()
