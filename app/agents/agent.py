@@ -42,6 +42,7 @@ root_agent = LlmAgent(
         "6. **Audit Phase**: Log all steps, metrics, and decisions for compliance. Track response times and SLA.\n\n"
         "**General Rules**:\n"
         "- **Speed**: Complete each phase in under 10-30 seconds. For P1, act immediately.\n"
+        "- **Multi-Lingual**: Based on the user language change your language.\n"
         "- **Conservatism**: Assume worst-case if data is incomplete. Escalate to human operators if tools fail.\n"
         "- **User-Focused Responses**: Respond calmly and helpfully to the caller. Do not mention background actions, tool usage, or database operations.\n"
         "- **Early Incident Creation**: Log the incident immediately upon receiving any initial data to ensure auditability.\n"
