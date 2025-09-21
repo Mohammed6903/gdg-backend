@@ -19,12 +19,34 @@ async def get_user_by_email(email: str):
     return await db.users.find_one({"email": email})
 
 # Incident operations
-async def create_incident(data: dict):
+async def create_incident(data: dict) -> dict:
+    """
+    Create a new incident.
+
+    Args:
+        data (dict): Incident data with the following structure:
+            - id (str, optional): The incident ID, defaults to None.
+            - caller_name (str, optional): Name of the caller.
+            - caller_phone (str, optional): Phone number of the caller.
+            - incident_type (str, optional): Type of incident, e.g., "medical", "accident".
+            - symptoms (str, optional): Symptoms or details.
+            - summary (str, optional): Summary of the incident.
+            - location (dict): Location as {"lat": float, "lng": float}.
+            - address (str, optional): Address of the incident.
+            - priority (str, optional): Priority level, defaults to "P3" (P1 critical, P2 urgent, P3 standard).
+            - status (str, optional): Status, defaults to "active" (active, resolved, cancelled).
+            - created_at (datetime, optional): Creation timestamp, defaults to current UTC time.
+            - updated_at (datetime, optional): Update timestamp, defaults to current UTC time.
+            - assigned_responder_id (str, optional): ID of assigned responder, defaults to None.
+
+    Returns:
+        The unique identifier of the created incident.
+    """
     db = await get_db()
     data["created_at"] = datetime.now(timezone.utc)
     data["updated_at"] = datetime.now(timezone.utc)
     result = await db.incidents.insert_one(data)
-    return await db.incidents.find_one({"_id": result.inserted_id})
+    return str(result.inserted_id)
 
 async def get_incident(incident_id: str):
     db = await get_db()
@@ -40,13 +62,47 @@ async def get_latest_incident():
     return incident
 
 async def update_incident(incident_id: str, update_data: dict):
+    """
+    Updates an incident in the database with the provided data.
+
+    This asynchronous function updates the incident document identified by the given
+    incident_id with the fields specified in update_data. The 'updated_at' field is
+    automatically set to the current UTC time. It then retrieves and returns the
+    updated incident document.
+
+    Args:
+        incident_id (str): The unique identifier (as a string) of the incident to update.
+            This corresponds to the '_id' field in the database.
+        update_data (dict): A dictionary containing the fields to update. The keys
+            should correspond to the fields of the Incident model. Valid keys include:
+            - caller_name (Optional[str]): Name of the caller.
+            - caller_phone (Optional[str]): Phone number of the caller.
+            - incident_type (Optional[str]): Type of incident, e.g., "medical", "accident".
+            - symptoms (Optional[str]): Symptoms described.
+            - summary (Optional[str]): Summary of the incident.
+            - location (Dict[str, float]): A dictionary with 'lat' and 'lng' as floats,
+              representing latitude and longitude.
+            - address (Optional[str]): Address of the incident.
+            - priority (Optional[str]): Priority level, e.g., "P1" (critical), "P2" (urgent),
+              "P3" (standard). Defaults to "P3" if not provided.
+            - status (str): Status of the incident, e.g., "active", "resolved", "cancelled".
+            - assigned_responder_id (Optional[str]): ID of the assigned responder.
+            Note: 'created_at' should not be updated manually; 'updated_at' is set automatically.
+
+    Returns:
+        The unique identifier of the updated incident.
+
+    Raises:
+        Exception: If the database operation fails (e.g., invalid incident_id or connection issues).
+            Specific exceptions depend on the database driver used.
+    """
     db = await get_db()
     update_data["updated_at"] = datetime.now(timezone.utc)
     await db.incidents.update_one(
         {"_id": ObjectId(incident_id)}, 
         {"$set": update_data}
     )
-    return await db.incidents.find_one({"_id": ObjectId(incident_id)})
+    return incident_id
 
 async def get_active_incidents(limit: int = 50):
     db = await get_db()

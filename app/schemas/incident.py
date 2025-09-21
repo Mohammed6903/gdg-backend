@@ -4,9 +4,9 @@ from datetime import datetime
 
 class Incident(BaseModel):
     id: Optional[str] = Field(default=None, alias="_id")
-    caller_name: str
-    caller_phone: str
-    incident_type: str  # e.g., "medical", "accident"
+    caller_name: Optional[str]
+    caller_phone: Optional[str]
+    incident_type: Optional[str]  # e.g., "medical", "accident"
     symptoms: Optional[str]
     summary: Optional[str]
     location: Dict[str, float]  # {"lat": float, "lng": float}
